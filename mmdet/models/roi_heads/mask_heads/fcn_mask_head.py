@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from mmcv.cnn import ConvModule, build_conv_layer, build_upsample_layer
+from mmcv.ops.point_sample import bilinear_grid_sample as grid_sample
 from mmcv.ops.carafe import CARAFEPack
 from mmcv.runner import BaseModule, ModuleList, auto_fp16, force_fp32
 from torch.nn.modules.utils import _pair
@@ -403,7 +404,7 @@ def _do_paste_mask(masks, boxes, img_h, img_w, skip_empty=True):
     gy = img_y[:, :, None].expand(N, img_y.size(1), img_x.size(1))
     grid = torch.stack([gx, gy], dim=3)
 
-    img_masks = F.grid_sample(
+    img_masks = grid_sample(
         masks.to(dtype=torch.float32), grid, align_corners=False)
 
     if skip_empty:
