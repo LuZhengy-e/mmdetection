@@ -44,20 +44,20 @@ class TwoBackboneDetector(BaseDetector):
         in_channels = self.neck1.out_channels
         out_channels = in_channels // 2
 
-        self.convs1 = [
+        self.convs1 = nn.ModuleList([
             build_conv_layer(cfg=None, 
                              in_channels=in_channels,
                              out_channels=out_channels,
                              kernel_size=1,
                              stride=1) for _ in range(self.num_outs)
-        ]
-        self.convs2 = [
+        ])
+        self.convs2 = nn.ModuleList([
             build_conv_layer(cfg=None, 
                              in_channels=in_channels,
                              out_channels=out_channels,
                              kernel_size=1,
                              stride=1) for _ in range(self.num_outs)
-        ]
+        ])
 
         if rpn_head is not None:
             rpn_train_cfg = train_cfg.rpn if train_cfg is not None else None
@@ -108,7 +108,7 @@ class TwoBackboneDetector(BaseDetector):
 
             outs.append(out)
 
-        return tuple(out)
+        return tuple(outs)
 
     def forward_dummy(self, img):
         """Used for computing network flops.
@@ -130,7 +130,6 @@ class TwoBackboneDetector(BaseDetector):
 
     def forward_train(self,
                       img,
-                      traj,
                       img_metas,
                       gt_bboxes,
                       gt_labels,
@@ -166,10 +165,10 @@ class TwoBackboneDetector(BaseDetector):
         Returns:
             dict[str, Tensor]: a dictionary of loss components
         """
+        traj = kwargs["traj"]
         x = self.extract_feat(img, traj)
 
         losses = dict()
-
         # RPN forward and loss
         if self.with_rpn:
             proposal_cfg = self.train_cfg.get('rpn_proposal',
@@ -185,7 +184,6 @@ class TwoBackboneDetector(BaseDetector):
             losses.update(rpn_losses)
         else:
             proposal_list = proposals
-
         roi_losses = self.roi_head.forward_train(x, img_metas, proposal_list,
                                                  gt_bboxes, gt_labels,
                                                  gt_bboxes_ignore, gt_masks,

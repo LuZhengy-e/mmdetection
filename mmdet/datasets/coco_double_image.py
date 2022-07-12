@@ -5,7 +5,7 @@ from .coco import CocoDataset
 
 @DATASETS.register_module()
 class CocoTwoImageDateset(CocoDataset):
-    CLASSES = ("Road", "Intersection")
+    CLASSES = ("road", "intersection")
 
     def __init__(self, traj_prefix, **kwargs):
         super(CocoTwoImageDateset, self).__init__(**kwargs)
