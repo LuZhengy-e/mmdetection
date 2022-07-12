@@ -110,14 +110,14 @@ class TwoBackboneDetector(BaseDetector):
 
         return tuple(outs)
 
-    def forward_dummy(self, img):
+    def forward_dummy(self, img, traj):
         """Used for computing network flops.
 
         See `mmdetection/tools/analysis_tools/get_flops.py`
         """
         outs = ()
         # backbone
-        x = self.extract_feat(img)
+        x = self.extract_feat(img, traj)
         # rpn
         if self.with_rpn:
             rpn_outs = self.rpn_head(x)
@@ -194,8 +194,8 @@ class TwoBackboneDetector(BaseDetector):
 
     async def async_simple_test(self,
                                 img,
-                                traj,
                                 img_meta,
+                                traj,
                                 proposals=None,
                                 rescale=False):
         """Async test without augmentation."""
@@ -211,7 +211,7 @@ class TwoBackboneDetector(BaseDetector):
         return await self.roi_head.async_simple_test(
             x, proposal_list, img_meta, rescale=rescale)
 
-    def simple_test(self, img, traj, img_metas, proposals=None, rescale=False):
+    def simple_test(self, img, img_metas, traj, proposals=None, rescale=False):
         """Test without augmentation."""
 
         assert self.with_bbox, 'Bbox head must be implemented.'
@@ -224,7 +224,7 @@ class TwoBackboneDetector(BaseDetector):
         return self.roi_head.simple_test(
             x, proposal_list, img_metas, rescale=rescale)
 
-    def aug_test(self, imgs, traj, img_metas, rescale=False):
+    def aug_test(self, imgs, img_metas, traj, rescale=False):
         """Test with augmentations.
 
         If rescale is False, then returned bboxes and masks will fit the scale
@@ -235,7 +235,7 @@ class TwoBackboneDetector(BaseDetector):
         return self.roi_head.aug_test(
             x, proposal_list, img_metas, rescale=rescale)
 
-    def onnx_export(self, img, traj, img_metas):
+    def onnx_export(self, img, img_metas, traj):
 
         img_shape = torch._shape_as_tensor(img)[2:]
         img_metas[0]['img_shape_for_onnx'] = img_shape
