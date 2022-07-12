@@ -84,6 +84,43 @@ class LoadImageFromFile:
 
 
 @PIPELINES.register_module()
+class LoadTrajImageFromFile(LoadImageFromFile):
+    def __call__(self, results):
+        if self.file_client is None:
+            self.file_client = mmcv.FileClient(**self.file_client_args)
+
+        if results['img_prefix'] is not None:
+            filename = osp.join(results['img_prefix'],
+                                results['img_info']['filename'])
+        else:
+            filename = results['img_info']['filename']
+        
+        if results['traj_prefix'] is not None:
+            trajname = osp.join(results['traj_prefix'],
+                                results['img_info']['filename'])
+
+        else:
+            raise IOError("This dataset doesn't set traj_prefix dir")
+
+        img_bytes = self.file_client.get(filename)
+        img = mmcv.imfrombytes(img_bytes, flag=self.color_type)
+        traj_bytes = self.file_client.get(trajname)
+        traj = mmcv.imfrombytes(traj_bytes, flag=self.color_type)
+        if self.to_float32:
+            img = img.astype(np.float32)
+            traj = traj.astype(np.float32)
+
+        results['filename'] = filename
+        results['ori_filename'] = results['img_info']['filename']
+        results['img'] = img
+        results['traj'] = traj
+        results['img_shape'] = img.shape
+        results['ori_shape'] = img.shape
+        results['img_fields'] = ['img', 'traj']
+        return results
+
+
+@PIPELINES.register_module()
 class LoadImageFromWebcam(LoadImageFromFile):
     """Load an image from webcam.
 

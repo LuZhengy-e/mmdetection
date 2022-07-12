@@ -3,6 +3,7 @@ from .builder import DATASETS, PIPELINES, build_dataloader, build_dataset
 from .cityscapes import CityscapesDataset
 from .coco import CocoDataset
 from .coco_panoptic import CocoPanopticDataset
+from .coco_double_image import CocoTwoImageDateset
 from .custom import CustomDataset
 from .dataset_wrappers import (ClassBalancedDataset, ConcatDataset,
                                MultiImageMixDataset, RepeatDataset)
@@ -22,5 +23,6 @@ __all__ = [
     'DistributedSampler', 'build_dataloader', 'ConcatDataset', 'RepeatDataset',
     'ClassBalancedDataset', 'WIDERFaceDataset', 'DATASETS', 'PIPELINES',
     'build_dataset', 'replace_ImageToTensor', 'get_loading_pipeline',
-    'NumClassCheckHook', 'CocoPanopticDataset', 'MultiImageMixDataset'
+    'NumClassCheckHook', 'CocoPanopticDataset', 'MultiImageMixDataset',
+    'CocoTwoImageDateset'
 ]

@@ -6,7 +6,7 @@ from .compose import Compose
 from .formating import (Collect, DefaultFormatBundle, ImageToTensor,
                         ToDataContainer, ToTensor, Transpose, to_tensor, TwoImageFormatBundle)
 from .instaboost import InstaBoost
-from .loading import (LoadAnnotations, LoadImageFromFile, LoadImageFromWebcam,
+from .loading import (LoadAnnotations, LoadImageFromFile, LoadImageFromWebcam, LoadTrajImageFromFile, 
                       LoadMultiChannelImageFromFiles, LoadProposals)
 from .test_time_aug import MultiScaleFlipAug
 from .transforms import (Albu, CutOut, Expand, MinIoURandomCrop, MixUp, Mosaic,
@@ -24,5 +24,5 @@ __all__ = [
     'InstaBoost', 'RandomCenterCropPad', 'AutoAugment', 'CutOut', 'Shear',
     'Rotate', 'ColorTransform', 'EqualizeTransform', 'BrightnessTransform',
     'ContrastTransform', 'Translate', 'RandomShift', 'Mosaic', 'MixUp',
-    'RandomAffine', 'YOLOXHSVRandomAug', 'TwoImageFormatBundle'
+    'RandomAffine', 'YOLOXHSVRandomAug', 'TwoImageFormatBundle', 'LoadTrajImageFromFile'
 ]
