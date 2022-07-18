@@ -29,7 +29,7 @@ test_pipeline = [
         ])
 ]
 data = dict(
-    samples_per_gpu=2,
+    samples_per_gpu=1,
     workers_per_gpu=2,
     train=dict(
         type=dataset_type,  
@@ -39,11 +39,11 @@ data = dict(
     val=dict(
         type=dataset_type,
         ann_file=data_root + 'annotations/instances_val2017.json',
-        img_prefix=data_root + 'val2017/',
+        img_prefix=data_root + 'train2017/',
         pipeline=test_pipeline),
     test=dict(
         type=dataset_type,
         ann_file=data_root + 'annotations/instances_minival2014.json',
-        img_prefix=data_root + 'val2014/',
+        img_prefix=data_root + 'train2017/',
         pipeline=test_pipeline))
 evaluation = dict(metric=['bbox', 'segm'])

@@ -3,6 +3,7 @@ import warnings
 import torch
 import torch.nn as nn
 from mmcv.cnn import build_conv_layer
+from mmcv.runner import auto_fp16
 
 from ..builder import DETECTORS, build_backbone, build_head, build_neck
 from .base import BaseDetector
@@ -41,7 +42,7 @@ class TwoBackboneDetector(BaseDetector):
 
         self.num_outs = self.neck1.num_outs
 
-        in_channels = self.neck1.out_channels
+        in_channels = self.neck1.out_channels * 2
         out_channels = in_channels // 2
 
         self.convs1 = nn.ModuleList([
@@ -51,13 +52,13 @@ class TwoBackboneDetector(BaseDetector):
                              kernel_size=1,
                              stride=1) for _ in range(self.num_outs)
         ])
-        self.convs2 = nn.ModuleList([
-            build_conv_layer(cfg=None, 
-                             in_channels=in_channels,
-                             out_channels=out_channels,
-                             kernel_size=1,
-                             stride=1) for _ in range(self.num_outs)
-        ])
+        # self.convs2 = nn.ModuleList([
+        #     build_conv_layer(cfg=None, 
+        #                      in_channels=in_channels,
+        #                      out_channels=out_channels,
+        #                      kernel_size=1,
+        #                      stride=1) for _ in range(self.num_outs)
+        # ])
 
         if rpn_head is not None:
             rpn_train_cfg = train_cfg.rpn if train_cfg is not None else None
@@ -103,8 +104,10 @@ class TwoBackboneDetector(BaseDetector):
         outs = []
         for i in range(self.num_outs):
             img_feat, traj_feat = img_feats[i], traj_feats[i]
-            img_feat, traj_feat = self.convs1[i](img_feat), self.convs2[i](traj_feat)
-            out = torch.cat((img_feat, traj_feat), dim=1)
+            new_feat = torch.cat((img_feat, traj_feat), dim=1)
+            out = self.convs1[i](new_feat)
+            # img_feat, traj_feat = self.convs1[i](img_feat), self.convs2[i](traj_feat)
+            # out = torch.cat((img_feat, traj_feat), dim=1)
 
             outs.append(out)
 
@@ -263,8 +266,6 @@ class TwoBackboneDetector(BaseDetector):
             for img_id in range(batch_size):
                 img_meta[img_id]['batch_input_shape'] = tuple(img.size()[-2:])
 
-        kwargs['traj'] = kwargs['traj'][0]
-
         if num_augs == 1:
             # proposals (List[List[Tensor]]): the outer list indicates
             # test-time augs (multiscale, flip, etc.) and the inner list
@@ -273,6 +274,7 @@ class TwoBackboneDetector(BaseDetector):
             # proposals.
             if 'proposals' in kwargs:
                 kwargs['proposals'] = kwargs['proposals'][0]
+            kwargs['traj'] = kwargs['traj'][0]
             return self.simple_test(imgs[0], img_metas[0], **kwargs)
         else:
             assert imgs[0].size(0) == 1, 'aug test does not support ' \
@@ -282,8 +284,18 @@ class TwoBackboneDetector(BaseDetector):
             assert 'proposals' not in kwargs
             return self.aug_test(imgs, img_metas, **kwargs)
 
-    def onnx_export(self, img, img_metas, traj):
+    @auto_fp16(apply_to=('img', 'traj'))
+    def forward(self, img, traj, img_metas, return_loss=True, **kwargs):
+        if torch.onnx.is_in_onnx_export():
+            assert len(img_metas) == 1
+            return self.onnx_export(img, img_metas[0], traj)
 
+        if return_loss:
+            return self.forward_train(img, img_metas, traj=traj, **kwargs)
+        else:
+            return self.forward_test(img, img_metas, traj=traj, **kwargs)
+
+    def onnx_export(self, img, img_metas, traj):
         img_shape = torch._shape_as_tensor(img)[2:]
         img_metas[0]['img_shape_for_onnx'] = img_shape
         x = self.extract_feat(img, traj)
