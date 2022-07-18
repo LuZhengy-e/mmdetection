@@ -112,7 +112,7 @@ class YOLACT(SingleStageDetector):
             img_metas,
             rescale=rescale)
 
-        return list(zip(bbox_results, segm_results))
+        return list(zip(bbox_results, segm_results)) 
 
     def aug_test(self, imgs, img_metas, rescale=False):
         """Test with augmentations."""

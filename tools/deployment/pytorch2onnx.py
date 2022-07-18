@@ -24,16 +24,20 @@ def pytorch2onnx(model,
                  test_img=None,
                  do_simplify=False,
                  dynamic_export=None,
-                 skip_postprocess=False):
+                 skip_postprocess=False,
+                 is_traj=False):
 
     input_config = {
         'input_shape': input_shape,
         'input_path': input_img,
         'normalize_cfg': normalize_cfg
     }
+    traj_config = {}
     # prepare input
     one_img, one_meta = preprocess_example_input(input_config)
     img_list, img_meta_list = [one_img], [[one_meta]]
+    if is_traj:
+        img_list = (one_img, one_img)
 
     if skip_postprocess:
         warnings.warn('Not all models support export onnx without post '
@@ -65,7 +69,9 @@ def pytorch2onnx(model,
     output_names = ['dets', 'labels']
     if model.with_mask:
         output_names.append('masks')
-    input_name = 'input'
+    input_name = 'image'
+    if is_traj:
+        input_name += "_traj"
     dynamic_axes = None
     if dynamic_export:
         dynamic_axes = {
@@ -85,12 +91,12 @@ def pytorch2onnx(model,
         }
         if model.with_mask:
             dynamic_axes['masks'] = {0: 'batch', 1: 'num_dets'}
-
+    
     torch.onnx.export(
         model,
         img_list,
         output_file,
-        input_names=[input_name],
+        input_names=input_name.split("_"),
         output_names=output_names,
         export_params=True,
         keep_initializers_as_inputs=True,
@@ -288,6 +294,7 @@ def parse_args():
         help='Whether to export model without post process. Experimental '
         'option. We do not guarantee the correctness of the exported '
         'model.')
+    parser.add_argument('--traj', default=False)
     args = parser.parse_args()
     return args
 
@@ -323,7 +330,6 @@ if __name__ == '__main__':
     # build the model and load checkpoint
     model = build_model_from_cfg(args.config, args.checkpoint,
                                  args.cfg_options)
-
     if not args.input_img:
         args.input_img = osp.join(osp.dirname(__file__), '../../demo/demo.jpg')
 
@@ -342,4 +348,5 @@ if __name__ == '__main__':
         test_img=args.test_img,
         do_simplify=args.simplify,
         dynamic_export=args.dynamic_export,
-        skip_postprocess=args.skip_postprocess)
+        skip_postprocess=args.skip_postprocess,
+        is_traj=args.traj)

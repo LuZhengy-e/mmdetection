@@ -1,4 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
+import cv2
 import numpy as np
 import torch
 from torch.nn.modules.utils import _pair
@@ -61,6 +62,7 @@ def mask_target(pos_proposals_list, pos_assigned_gt_inds_list, gt_masks_list,
     mask_targets = list(mask_targets)
     if len(mask_targets) > 0:
         mask_targets = torch.cat(mask_targets)
+
     return mask_targets
 
 
